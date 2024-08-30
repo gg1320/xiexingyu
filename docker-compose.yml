@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+    # reverseproxy:
+    #     image: nginx:1.23
+    #     ports:
+    #         - "443:443"
+    #         - "80:80"
+    #     volumes:
+    #         - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    #         - ./ssl/my-site.key:/etc/ssl/private/site.dec.key
+    #         - ./ssl/my-site.crt:/etc/ssl/certs/site.crt
+    #     depends_on:
+    #         - client
+    mongo:
+        image: mongo
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+            - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+            - MONGO_INITDB_DATABASE=project
+        expose:
+            - "27017"
+    mongo-express:
+        image: mongo-express
+        environment:
+            - ME_CONFIG_MONGODB_SERVER=mongo
+            - ME_CONFIG_MONGODB_PORT=27017
+            - ME_CONFIG_MONGODB_ENABLE_ADMIN=false
+            - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
+            - ME_CONFIG_MONGODB_AUTH_USERNAME=${MONGO_ROOT_USER}
+            - ME_CONFIG_MONGODB_AUTH_PASSWORD=${MONGO_ROOT_PASSWORD}
+            - ME_CONFIG_BASICAUTH_USERNAME=${MONGOEXPRESS_LOGIN}
+            - ME_CONFIG_BASICAUTH_PASSWORD=${MONGOEXPRESS_PASSWORD}
+        depends_on:
+            - mongo
+        ports:
+            - "8081:8081"
+    node:
+        image: "node:16.20"
+        user: "node"
+        working_dir: /home/node/app
+        environment:
+            - NODE_ENV=production
+        volumes:
+            - /home/ubuntu/mern-social-media:/home/node/app
+        expose:
+            - "8080" 
+        depends_on:
+            - "mongo"
+        command: "node server"
+    client:
+        image: "node:16.20"
+        user: "node"
+        working_dir: /home/node/app
+        environment:
+            - NODE_ENV=production
+        volumes:
+            - /home/ubuntu/mern-social-media/client:/home/node/app
+        depends_on: 
+            - node
+        ports:
+            - "3000:3000"
+        command: "npm start"
+
+
